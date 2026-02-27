@@ -4,11 +4,15 @@ from PIL import Image
 import os
 from datetime import datetime
 
+# WebRTC imports (LIVE STREAMING)
+from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
+import av
+
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(page_title="Vehicle Detection System")
 
 st.title("Vehicle Detection Dashboard")
-st.write("Upload an image or use camera for vehicle detection.")
+st.write("Upload image or use live video streaming for vehicle detection.")
 
 # ---------------- LOAD MODEL ----------------
 model = YOLO("yolov8n.pt")
@@ -30,8 +34,6 @@ if uploaded_file is not None:
     image = Image.open(uploaded_file)
     st.image(image, caption="Uploaded Image", width="stretch")
 
-    st.write("Running vehicle detection...")
-
     results = model(image)[0]
 
     boxes = results.boxes
@@ -46,7 +48,6 @@ if uploaded_file is not None:
 
     result_image = results.plot()
 
-    # Vehicle counting
     for box in boxes:
         cls_id = int(box.cls[0])
         label = names[cls_id]
@@ -79,18 +80,16 @@ if uploaded_file is not None:
     st.success("Output image saved successfully.")
 
 # =====================================================
-# CLOUD CAMERA (WORKS AFTER DEPLOYMENT)
+# CAMERA IMAGE CAPTURE
 # =====================================================
 
-st.header("Camera Detection (Cloud Supported)")
+st.header("Camera Capture Detection")
 
-camera_image = st.camera_input("Capture image from camera")
+camera_image = st.camera_input("Capture Image")
 
 if camera_image is not None:
 
     image = Image.open(camera_image)
-
-    st.write("Running detection...")
 
     results = model(image)[0]
     result_image = results.plot()
@@ -98,12 +97,34 @@ if camera_image is not None:
     st.image(result_image, caption="Detection Result", width="stretch")
 
 # =====================================================
-# LOCAL LIVE CAMERA (ONLY FOR VS CODE RUN)
+# REAL LIVE VIDEO STREAMING (WORKS IN CLOUD)
 # =====================================================
 
-st.header("Live Webcam Detection (Local System Only)")
+st.header("Live Video Streaming Detection")
 
-run_camera = st.checkbox("Start Live Camera (Local Only)")
+class VideoProcessor(VideoProcessorBase):
+
+    def recv(self, frame):
+        img = frame.to_ndarray(format="bgr24")
+
+        results = model(img)[0]
+        img = results.plot()
+
+        return av.VideoFrame.from_ndarray(img, format="bgr24")
+
+
+webrtc_streamer(
+    key="vehicle-live-stream",
+    video_processor_factory=VideoProcessor,
+)
+
+# =====================================================
+# OPTIONAL LOCAL OPENCV CAMERA
+# =====================================================
+
+st.header("Local Webcam Detection (Optional)")
+
+run_camera = st.checkbox("Start Local Camera")
 
 if run_camera:
     import cv2
@@ -115,7 +136,6 @@ if run_camera:
         ret, frame = cap.read()
 
         if not ret:
-            st.warning("Camera not detected.")
             break
 
         results = model(frame)[0]

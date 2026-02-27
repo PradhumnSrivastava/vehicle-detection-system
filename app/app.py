@@ -4,7 +4,7 @@ from PIL import Image
 import os
 from datetime import datetime
 
-# WebRTC imports
+# WebRTC
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import av
 
@@ -14,7 +14,7 @@ st.set_page_config(page_title="Vehicle Detection System")
 st.title("Vehicle Detection Dashboard")
 st.write("Upload image or use live video streaming for vehicle detection.")
 
-# ---------------- LOAD MODEL (Cached) ----------------
+# ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_model():
     return YOLO("yolov8n.pt")
@@ -92,7 +92,6 @@ st.header("Camera Capture Detection")
 camera_image = st.camera_input("Capture Image")
 
 if camera_image is not None:
-
     image = Image.open(camera_image)
 
     results = model(image)[0]
@@ -101,28 +100,27 @@ if camera_image is not None:
     st.image(result_image, caption="Detection Result", width="stretch")
 
 # =====================================================
-# LIVE VIDEO STREAMING (MOBILE SAFE)
+# LIVE VIDEO STREAMING
 # =====================================================
 
 st.header("Live Video Streaming Detection")
 
-# -------- Camera Selector --------
+# -------- Stable Camera Selector --------
 camera_mode = st.selectbox(
     "Select Camera",
-    ["Auto", "Back Camera", "Front Camera"]
+    ["Back Camera", "Front Camera"]
 )
 
-facing_mode = None
-
 if camera_mode == "Back Camera":
-    facing_mode = "environment"
-elif camera_mode == "Front Camera":
-    facing_mode = "user"
-
-constraints = {"video": True, "audio": False}
-
-if facing_mode:
-    constraints["video"] = {"facingMode": facing_mode}
+    constraints = {
+        "video": {"facingMode": "environment"},
+        "audio": False,
+    }
+else:
+    constraints = {
+        "video": {"facingMode": "user"},
+        "audio": False,
+    }
 
 
 # -------- Video Processor --------
@@ -144,7 +142,7 @@ webrtc_streamer(
 )
 
 # =====================================================
-# LOCAL OPENCV CAMERA (ONLY LOCAL SYSTEM)
+# LOCAL WEBCAM (ONLY VS CODE)
 # =====================================================
 
 st.header("Local Webcam Detection (Optional)")

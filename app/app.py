@@ -1,8 +1,6 @@
-import cv2
 import streamlit as st
 from ultralytics import YOLO
 from PIL import Image
-import cv2
 import os
 from datetime import datetime
 
@@ -13,10 +11,8 @@ st.title("Vehicle Detection Dashboard")
 st.write("Upload an image or use live camera for vehicle detection.")
 
 # ---------------- LOAD MODEL ----------------
-
 model = YOLO("yolov8n.pt")
 
-# Vehicle classes
 VEHICLE_CLASSES = ["car", "bus", "truck", "motorcycle"]
 
 # =====================================================
@@ -70,7 +66,9 @@ if uploaded_file is not None:
     st.image(result_image, caption="Detection Result", width="stretch")
 
     # -------- Save Output --------
-    save_path = "../outputs/detected_images"
+    import cv2   # Lazy import (important for deployment)
+
+    save_path = "outputs/detected_images"
     os.makedirs(save_path, exist_ok=True)
 
     filename = datetime.now().strftime("%Y%m%d_%H%M%S.jpg")
@@ -86,14 +84,19 @@ if uploaded_file is not None:
 
 st.header("Live Camera Vehicle Detection")
 
+st.info(
+    "Live webcam works locally. Cloud deployment may not support system webcam."
+)
+
 run_camera = st.checkbox("Start Camera")
 
 if run_camera:
+    import cv2  # Lazy import
 
     cap = cv2.VideoCapture(0)
     frame_placeholder = st.empty()
 
-    while True:
+    while cap.isOpened():
         ret, frame = cap.read()
 
         if not ret:
@@ -108,9 +111,5 @@ if run_camera:
             channels="BGR",
             width="stretch"
         )
-
-        # Stop condition
-        if not run_camera:
-            break
 
     cap.release()

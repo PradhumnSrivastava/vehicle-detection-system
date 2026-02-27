@@ -4,7 +4,7 @@ from PIL import Image
 import os
 from datetime import datetime
 
-# WebRTC imports (LIVE STREAMING)
+# WebRTC imports
 from streamlit_webrtc import webrtc_streamer, VideoProcessorBase
 import av
 
@@ -14,8 +14,12 @@ st.set_page_config(page_title="Vehicle Detection System")
 st.title("Vehicle Detection Dashboard")
 st.write("Upload image or use live video streaming for vehicle detection.")
 
-# ---------------- LOAD MODEL ----------------
-model = YOLO("yolov8n.pt")
+# ---------------- LOAD MODEL (Cached) ----------------
+@st.cache_resource
+def load_model():
+    return YOLO("yolov8n.pt")
+
+model = load_model()
 
 VEHICLE_CLASSES = ["car", "bus", "truck", "motorcycle"]
 
@@ -97,11 +101,31 @@ if camera_image is not None:
     st.image(result_image, caption="Detection Result", width="stretch")
 
 # =====================================================
-# REAL LIVE VIDEO STREAMING (WORKS IN CLOUD)
+# LIVE VIDEO STREAMING (MOBILE SAFE)
 # =====================================================
 
 st.header("Live Video Streaming Detection")
 
+# -------- Camera Selector --------
+camera_mode = st.selectbox(
+    "Select Camera",
+    ["Auto", "Back Camera", "Front Camera"]
+)
+
+facing_mode = None
+
+if camera_mode == "Back Camera":
+    facing_mode = "environment"
+elif camera_mode == "Front Camera":
+    facing_mode = "user"
+
+constraints = {"video": True, "audio": False}
+
+if facing_mode:
+    constraints["video"] = {"facingMode": facing_mode}
+
+
+# -------- Video Processor --------
 class VideoProcessor(VideoProcessorBase):
 
     def recv(self, frame):
@@ -116,16 +140,11 @@ class VideoProcessor(VideoProcessorBase):
 webrtc_streamer(
     key="vehicle-live-stream",
     video_processor_factory=VideoProcessor,
-    media_stream_constraints={
-        "video": {
-            "facingMode": {"ideal": "environment"}
-        },
-        "audio": False,
-    },
+    media_stream_constraints=constraints,
 )
 
 # =====================================================
-# OPTIONAL LOCAL OPENCV CAMERA
+# LOCAL OPENCV CAMERA (ONLY LOCAL SYSTEM)
 # =====================================================
 
 st.header("Local Webcam Detection (Optional)")

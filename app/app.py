@@ -8,7 +8,7 @@ from datetime import datetime
 st.set_page_config(page_title="Vehicle Detection System")
 
 st.title("Vehicle Detection Dashboard")
-st.write("Upload an image or use live camera for vehicle detection.")
+st.write("Upload an image or use camera for vehicle detection.")
 
 # ---------------- LOAD MODEL ----------------
 model = YOLO("yolov8n.pt")
@@ -16,7 +16,7 @@ model = YOLO("yolov8n.pt")
 VEHICLE_CLASSES = ["car", "bus", "truck", "motorcycle"]
 
 # =====================================================
-# IMAGE DETECTION SECTION
+# IMAGE DETECTION
 # =====================================================
 
 st.header("Image Vehicle Detection")
@@ -46,7 +46,7 @@ if uploaded_file is not None:
 
     result_image = results.plot()
 
-    # -------- Vehicle Counting --------
+    # Vehicle counting
     for box in boxes:
         cls_id = int(box.cls[0])
         label = names[cls_id]
@@ -65,8 +65,8 @@ if uploaded_file is not None:
 
     st.image(result_image, caption="Detection Result", width="stretch")
 
-    # -------- Save Output --------
-    import cv2   # Lazy import (important for deployment)
+    # Save output
+    import cv2
 
     save_path = "outputs/detected_images"
     os.makedirs(save_path, exist_ok=True)
@@ -79,19 +79,34 @@ if uploaded_file is not None:
     st.success("Output image saved successfully.")
 
 # =====================================================
-# LIVE CAMERA DETECTION SECTION
+# CLOUD CAMERA (WORKS AFTER DEPLOYMENT)
 # =====================================================
 
-st.header("Live Camera Vehicle Detection")
+st.header("Camera Detection (Cloud Supported)")
 
-st.info(
-    "Live webcam works locally. Cloud deployment may not support system webcam."
-)
+camera_image = st.camera_input("Capture image from camera")
 
-run_camera = st.checkbox("Start Camera")
+if camera_image is not None:
+
+    image = Image.open(camera_image)
+
+    st.write("Running detection...")
+
+    results = model(image)[0]
+    result_image = results.plot()
+
+    st.image(result_image, caption="Detection Result", width="stretch")
+
+# =====================================================
+# LOCAL LIVE CAMERA (ONLY FOR VS CODE RUN)
+# =====================================================
+
+st.header("Live Webcam Detection (Local System Only)")
+
+run_camera = st.checkbox("Start Live Camera (Local Only)")
 
 if run_camera:
-    import cv2  # Lazy import
+    import cv2
 
     cap = cv2.VideoCapture(0)
     frame_placeholder = st.empty()

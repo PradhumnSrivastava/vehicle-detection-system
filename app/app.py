@@ -116,6 +116,12 @@ class VideoProcessor(VideoProcessorBase):
 webrtc_streamer(
     key="vehicle-live-stream",
     video_processor_factory=VideoProcessor,
+    media_stream_constraints={
+        "video": {
+            "facingMode": {"ideal": "environment"}
+        },
+        "audio": False,
+    },
 )
 
 # =====================================================

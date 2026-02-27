@@ -12,7 +12,8 @@ st.title("Vehicle Detection Dashboard")
 st.write("Upload an image or use live camera for vehicle detection.")
 
 # ---------------- LOAD MODEL ----------------
-model = YOLO("yolov5s.pt")
+
+model = YOLO("yolov8n.pt")
 
 # Vehicle classes
 VEHICLE_CLASSES = ["car", "bus", "truck", "motorcycle"]

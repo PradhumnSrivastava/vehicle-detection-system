@@ -3,3 +3,6 @@ ultralytics
 opencv-python-headless
 numpy<2
 pillow
+pandas
+torch
+torchvision

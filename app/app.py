@@ -4,13 +4,12 @@ import numpy as np
 from PIL import Image
 import pandas as pd
 import time
-import cv2
 import io
 
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="AI Vehicle Detection",
-    layout="wide",
+    layout="wide"
 )
 
 # ---------------- MODERN UI STYLE ----------------
@@ -80,7 +79,12 @@ st.markdown(
 # ---------------- LOAD MODEL ----------------
 @st.cache_resource
 def load_model():
-    return YOLO("yolov8n.pt")
+    try:
+        model = YOLO("yolov8n.pt")
+        return model
+    except Exception as e:
+        st.error("Model failed to load.")
+        st.exception(e)
 
 model = load_model()
 
@@ -109,13 +113,13 @@ else:
     image = st.camera_input("Capture Image")
 
 # ---------------- DETECTION ----------------
-if image:
+if image and model:
 
     img = Image.open(image).convert("RGB")
     img_np = np.array(img)
 
     with st.spinner("Running AI Detection..."):
-        time.sleep(0.6)
+        time.sleep(0.5)
         results = model(img_np, conf=confidence)
 
     annotated = results[0].plot()
@@ -129,13 +133,13 @@ if image:
 
     with col2:
         st.markdown('<div class="card">', unsafe_allow_html=True)
-        st.image(annotated, caption="Detection Result", channels="BGR")
+        st.image(annotated, caption="Detection Result")
         st.markdown('</div>', unsafe_allow_html=True)
 
     # ---------------- STATS ----------------
     boxes = results[0].boxes
 
-    if boxes is not None:
+    if boxes is not None and len(boxes) > 0:
 
         classes = boxes.cls.cpu().numpy()
         names = model.names
@@ -162,10 +166,8 @@ if image:
             st.dataframe(counts, use_container_width=True)
             st.markdown('</div>', unsafe_allow_html=True)
 
-    # ---------------- FIXED DOWNLOAD ----------------
-    result_image = Image.fromarray(
-        cv2.cvtColor(annotated, cv2.COLOR_BGR2RGB)
-    )
+    # ---------------- DOWNLOAD RESULT ----------------
+    result_image = Image.fromarray(annotated)
 
     buffer = io.BytesIO()
     result_image.save(buffer, format="PNG")
@@ -177,3 +179,4 @@ if image:
         file_name="detection_result.png",
         mime="image/png"
     )
+
